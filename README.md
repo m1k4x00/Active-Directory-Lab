@@ -5,16 +5,24 @@
 The goal of this project is to create a simple virtual Active Directory environment using VirtualBox which can be used to practice defensive and offensive tacticts.
 The topology of the environment is visualized in the following picture.
 
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/e8fafdd9-e879-41f3-b71a-824198737020)
+
 ## 2. Installing and setting up the Virtual Machines
 
 ### 2.1. Server (Domain Controller)
-As the domain controller we'll be using Microsoft Windows Server 2019 with a standard setup.
+As the domain controller we'll be using Microsoft Windows Server 2019 with a standard install.
 We will add an additional network adapter for the internal network
 ![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/272fef05-0051-4b60-98cc-770b17f0f069)
 
 We will also need to configure the internal network on the machine itself based on the topology picture.
 
 ![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/8b2a2f5c-4e6a-4aff-a7b7-4519076ce9d6)
+
+### 2.2 Client
+As the cilent we'll use a stanadard Microsoft Windows 10 install.
+By looking at our network topology diagram we can see that we need to set the netowrk adapter to Internal Network
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/d924dcaf-f306-4bdc-b057-14a7d0ba1173)
 
 ## 3. Creating the Active Directory Domain (Server)
 
@@ -64,5 +72,20 @@ Next we add the scope for the DHCP server using the New Scope Wizard
 
 After that the wizard will ask as to enter the Default Gateway for our clients. From the diagram we have assigned it as 172.16.0.1 (Domain Controllers ip address)
 
+Lastly we will add the router option to the Server Options so the.
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/ff480e31-eac2-4d46-a63b-eb8671927cf3)
+
 ## 7. Automaing Adding Users to AD using PowerShell
+The PowerShell script will first read the names of the users from names.txt and then create AD users based on those names.
+
 The scirpt is awailabe in this repository
+
+After the script is run the _USERS OU should look like this
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/27a6081f-f524-4b18-9f93-aceca9d70fc1)
+
+## 8. Making Sure the Client Can Access the Internet
+
+We can now see that the client can browse the Internet
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/8f7c8ba3-d14b-4de1-9437-ac5ca390a3c6)
