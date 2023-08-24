@@ -3,7 +3,7 @@
 ## 1. Introduction
 
 The goal of this project is to create a simple virtual Active Directory environment using VirtualBox which can be used to practice defensive and offensive tacticts.
-The topology of the environment is visualized in the following picture.
+The topology of the environment is visualized in the following picture. After we have created the environment we are going to test varius attacks against the machines.
 
 ![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/e8fafdd9-e879-41f3-b71a-824198737020)
 
@@ -82,10 +82,50 @@ The PowerShell script will first read the names of the users from names.txt and 
 The scirpt is awailabe in this repository
 
 After the script is run the _USERS OU should look like this
+
 ![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/27a6081f-f524-4b18-9f93-aceca9d70fc1)
 
 ## 8. Making Sure the Client Can Access the Internet
-
 We can now see that the client can browse the Internet
 
 ![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/8f7c8ba3-d14b-4de1-9437-ac5ca390a3c6)
+
+## 9. Preperation For Attacks
+Before we start attacking the environment we are going to add and change a few things.
+First we will make a group policy to disable Windows Defender since the goal is not to demonstrate AV evasion.
+
+### 9.1 New Users And Group
+Next we will change our user structure. We will create a new Domain Administrator called Tom Stark, two new users called Frank Castle and Paul Parker and and SQLService account.
+We will intentionally make the SQLService account a Domain Administrator for future attacks and write the password in the description which is surprisingly fairly common.
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/d5063dbe-3dd2-45b4-ac95-82022109e9af)
+
+### 9.2 Creating a SMB Share
+We will also create a new SMB share called vulnshare in the Server Manager for Domain Controller. We created the SMB share because most Domain Controllers have a share and we wanted to open ports 139 and 445.
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/c3e4dbff-c89a-460f-b7fe-a7965f60026b)
+
+### 9.3 Setting SPN
+We set a Service Principle Name for a future attack regarding Kerberoasting
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/d8f91561-b576-4252-8129-2073c5575772)
+
+### 9.4 Adding a New Machine
+We will also add a new machine resulting in the following topology
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/b7261856-fb7a-493e-931f-8e65ac1a51e8)
+
+### 9.5 Adding Shared Folder to Both Machines
+We add a folder named Share to CLIENT and CLIENT2 and share it to everyone
+
+### 9.6 Joining CLIENT to the Domain
+We join the computer to the Domain from Windows settings using the Access Work or School wizard
+
+### 9.7 Adding Frank Castle as Local Administrator on CLIENT
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/b0dbad33-05d4-4197-b87e-fa883cb84d28)
+
+## 9.8 Adding Frank Castle and Paul Parker as Local Administrator on CLIENT2
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/e486878b-42de-45c9-9e82-8086538ca1e1)
+
+Now we have Frank Castle as the Local Administrator of both the client machines and Paul Parker Local Administrator of the CLIENT2 machine.
