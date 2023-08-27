@@ -124,8 +124,117 @@ We join the computer to the Domain from Windows settings using the Access Work o
 
 ![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/b0dbad33-05d4-4197-b87e-fa883cb84d28)
 
-## 9.8 Adding Frank Castle and Paul Parker as Local Administrator on CLIENT2
+### 9.8 Adding Frank Castle and Paul Parker as Local Administrator on CLIENT2
 
 ![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/e486878b-42de-45c9-9e82-8086538ca1e1)
 
 Now we have Frank Castle as the Local Administrator of both the client machines and Paul Parker Local Administrator of the CLIENT2 machine.
+
+## 10. Demonstrating Different Attacks
+Next we will demonstrate different attacks that can be done against a Active Directory environment. We assume that the attacker has access to the internal network. The attacker will use a Kali Linux machine to carry out the attacks.
+
+## 10.1 LLMNR Poisoning
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/ddaf1ef7-ee73-46ac-95e4-17fbfa72959e)
+*LLMNR poisoning process - Image by technologysolutions*
+### 10.1.1 Overview
+LLMNR stands for Link-Local Multicast Name Resolution. In LLMNR Poisoning the attacker listens and waits to intercept a request for the victim.
+
+Let's go through the steps of a LLMNR Poisoning attack
+
+1. The VICTIM wants to connect the server \\hackme but instead types \\hackm.
+2. The DNS server doesn't know that host.
+3. The DNS server then asks around the network to see if anyone else knows that host
+4. The the ATTACKER acts as and man in the middle and tells the VICTIM to send their hash to the ATTACKER
+5. The VICTIM now blindly sends their NTLMv2 hash to the ATTACKER.
+6. Now the ATTACKER can crack the password of the VICTIM offline
+
+There are various ways the ATTACKER can make the VICTIM type the wrong domain name or IP. 
+
+### 10.1.2 Attack Demo
+
+For the attack we will use a tool called Responder on our ATTACK machine to run the man in the middle attack using the following command on Kali Linux. 
+When a DNS failure happends Responder captures the VICTIMs IP, username and NTMLv2 hash.
+For simplicity we will assume that the VICTIM mistypes the ATTACKER machine IP when trying to open a file share
+
+First we run Responder on our Kali mahcine
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/bdd3eb39-3481-4ab2-85e7-268db654311b)
+
+Now when we try to connect to 172.16.0.101 (ATTACKER) from CLIENT as fcastle we get this
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/d7ef29f3-2323-4e21-854b-a15ece568f0e)
+
+And on the attacker machine we can now see 
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/4e15df8e-73a4-4a72-81bd-e9a69e5bbf9f)
+
+### 10.1.3 Cracking The Hash Using Hashcat
+Finally we will try to crack the hash using Hashcat. From the hashcat typelist we can find the corresponding mode to NTMLv2 hash. It appears to be 5600.
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/b5c2d40d-8ad7-4a1a-bf88-eabfc8a0da38)
+
+After the carcking was succesfull we get the password for fcastle
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/2a3c3aec-74c0-4774-bd66-302e08034772)
+*fcastle:Password1*
+
+### 10.1.3 LLMNR Poisoning Mitigation
+How can we best defense agaist LLMNR Poisoning?
+
+The best defence is to disable LLMNR and NBT-NS. We can turn off LLMNR by selecting "Turn OFF Multicast Name Resolution" under Local Computer Policy > Computer Configuration > Administrative Templates > Netowrk > DNS Client in the Group Policy Editor.
+NBT-NS can be truned off by navigating to Network Connections > Network Adapter Properties > TCP/IPv4 Propertises > Advanced tab > WINS tab and by selecting "Disable NetBIOS over TCP/IP"
+
+If for some reason LLMNR/NTB-NS must be used it is best to require Network Access Control and require strong user passwords.
+
+## 10.2 SMB Relay
+
+### 10.2.1 Overview
+Instead of cracking the password hash gathered with Responder, we can instead relay those hashes to other machines and potentially gain access.
+
+For SMB Relay to work there are some requirements.
+1. SMB signing must be dsiabled on the victim machine
+2. Relayed user credentials must be admin on the victim machine
+
+### 10.2.2 Preperation And Setup
+On our Responder.conf we will turn off SMB and HTTP servers so we will not respond with Responder.
+For the relay attack we will use a python based tool called nmtlrelayx.py which is part of the Impacket library
+We will also make sure that both CLIENT and CLIENT2 are discoverable to other machines.
+
+### 10.2.3 Attack Demo
+
+We will first need to determine wich machines on the network have SMB signing disabled. We can achieve this with a NMAP scan using smb2-security-mode script.
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/2f6eda03-dae2-4ecd-837d-06485fbd9aca)
+
+We can see that for our Domain Controller (172.16.0.1) message signing is enabled and required. This means that we will not be able to do any relay attacks on the Domain Controller.
+As for the client machines (172.16.0.100 and 172.16.0.102) we can see that message signing is enabled but not required which means that a relay attack is possible.
+
+Now we can add those to targets.txt but for simplification we will only add CLIENT2 (172.16.0.102) since we know that fcastle is a local admin of that machine.
+We will also edit the Responder.conf and turn off SMB and HTTP
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/61621d24-1efe-40db-88a9-47e5cfef4061)
+
+Next we run Responder as we did before in chapter 10.1.2 but we will also setup the relay
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/54bf9937-d001-4eb5-8cfb-33f0f025c1d5)
+
+Now we do the same missdirected share lookup as in NLMR Poisoning to retrieve the hash from CLIENT which we will then relay to CLIENT2
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/55f1ec11-ffee-4903-a3c4-5291b9dc1434)
+
+We then recieve the local SAM hashes of the CLIENT2 machine
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/1f24fdfc-af3b-478e-bc05-781119d240a9)
+
+We can try to crack these hashes offline or use to potentially move laterally or even vertically
+
+### 10.2.4 Getting a Shell With nmtlrelayx.py
+We can also try to get an interactive shell by adding "-i" to our command
+
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/e791127d-aa94-47fc-9f7c-c75c7c3756ca)
+
+we can see that the shell is running at 127.0.0.1:11001. We can connect to it using netcat
+![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/1e2450bd-4b48-45c9-92a7-93255e01ef47)
+
+We could also, for example, use the wildcard "-e" to execute a Meterpreter reverse shell to gain a Meterpreter session.
+
+### 10.2.5 SMB Relay Mitigation
+To prevent SMB Relay attacks one tactic is to enable SMB Siginng on all devises. This completely stops the attacs but it might cause performace issues with fiel copies.
+Disabling NTLM authentication on the network will completely stop the attack but if Kerberos stops working Windows will default back to NTLM.
+You could also Limit domain admins to specific task but enforcing the policy may be difficult.
+It is also possible to restrict local admins. This will prevent a lot of lateral movement but it might potentially increase the amount of service desk tickets.
+
+## 10.3 Gaining Shell Access
