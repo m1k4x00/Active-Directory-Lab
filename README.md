@@ -111,7 +111,7 @@ We will also create a new SMB share called vulnshare in the Server Manager for D
 
 ### 9.3 Setting SPN
 We set a Service Principle Name for a future attack regarding Kerberoasting
-![image](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/d8f91561-b576-4252-8129-2073c5575772)
+![263019787-d8f91561-b576-4252-8129-2073c5575772](https://github.com/m1k4x00/Active-Directory-Lab/assets/142576207/7fa693d0-30d0-4cb5-8565-e60ca72999fa)
 
 ### 9.4 Adding a New Machine
 We will also add a new machine resulting in the following topology
